@@ -32,10 +32,14 @@
 
 import digitalio
 from neopixel_write import neopixel_write
-try:
-    import _pixelbuf
-except ImportError:
+import sys
+if sys.implementation.version[0] < 5:
     import adafruit_pypixelbuf as _pixelbuf
+else:
+    try:
+        import _pixelbuf
+    except ImportError:
+        import adafruit_pypixelbuf as _pixelbuf
 
 
 __version__ = "0.0.0-auto.0"
@@ -112,9 +116,7 @@ class NeoPixel(_pixelbuf.PixelBuf):
                     order[pixel_order] = order_chars[char_no]
                 pixel_order = ''.join(order)
 
-        super().__init__(n, bytearray(self.n * bpp),
-                         brightness=brightness,
-                         rawbuf=bytearray(self.n * bpp),
+        super().__init__(n, brightness=brightness,
                          byteorder=pixel_order,
                          auto_write=auto_write)
 
@@ -142,14 +144,5 @@ class NeoPixel(_pixelbuf.PixelBuf):
              Use ``show`` instead. It matches Micro:Bit and Arduino APIs."""
         self.show()
 
-    def show(self):
-        """Shows the new colors on the pixels themselves if they haven't already
-        been autowritten.
-
-        The colors may or may not be showing after this function returns because
-        it may be done asynchronously."""
-        neopixel_write(self.pin, self.buf)
-
-    def fill(self, color):
-        """Colors all pixels the given ***color***."""
-        _pixelbuf.fill(self, color)
+    def _transmit(self, post_brightness_buffer):
+        neopixel_write(self.pin, post_brightness_buffer)
